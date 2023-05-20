@@ -1,0 +1,60 @@
+body {
+    margin:0;
+    padding:0;
+}
+
+/*https://www.w3schools.com/howto/howto_js_rangeslider.asp*/
+.colorSelection {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 70%; /* Full-width */
+    height: 100px; /* Specified height */
+
+    /*https://codepen.io/onurkerimov/pen/mPWmWL*/
+    background: linear-gradient(to right, 
+    hsl(  0, 100%, 40%) 0%,
+    hsl( 60, 100%, 40%) 16.67%,
+    hsl(120, 100%, 40%) 33.33%,
+    hsl(180, 100%, 40%) 50%, 
+    hsl(240, 100%, 40%) 66.67%,
+    hsl(320, 100%, 40%) 83.33%, 
+    hsl(360, 100%, 40%) 100%
+    ); /* hue spectrum background */
+
+    border: 10px solid white;
+    border-radius: 100px;
+    outline: none; /* Remove outline */
+    position: relative;
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.colorSelection::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    border-radius: 50px;
+    border: 10px solid white;
+    width: 70px; /* Set a specific slider handle width */
+    height: 70px; /* Slider handle height */
+    cursor: pointer; /* Cursor on hover */
+  }
+  
+  .colorSelection::-moz-range-thumb {
+    border-radius: 50px;
+    border: 10px solid white;
+    width: 70px; /* Set a specific slider handle width */
+    height: 70px; /* Slider handle height */
+    cursor: pointer; /* Cursor on hover */
+  }
+
+.next-button {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 70%; /* 70%-width */
+    height: 100px; /* Specified height */
+    font-size: 60;
+    border-radius: 100px;
+    border: 10px solid white;
+    background: none;
+    color: white;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif
+}
