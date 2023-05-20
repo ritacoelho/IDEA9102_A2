@@ -12,6 +12,8 @@ int CURRENT_CATENARY_END = 768;
 int[] xCoor;
 int[] yCoor;
 
+HashMap<Integer, HashSet> connectionHelper = new HashMap<Integer, HashSet>();
+
 static class User {
   int pole;
   boolean playing;
@@ -68,6 +70,7 @@ class AnimationSequenceCustom extends AnimationSequence {
     //initializing poles
     for(int i = 0; i < 5; i++) {
        users[i] = new User(i, false, 100, 0, initialCol, false);
+       connectionHelper.put(i, new HashSet<>());
     }
     
     //declaring poles x-coordinates
@@ -129,7 +132,14 @@ class AnimationSequenceCustom extends AnimationSequence {
         float dist = dist(xCoor[i], yCoor[i], xCoor[k], yCoor[k]);
         float sizeSum = (user.size + users[k].size)/2;
         
-        if(dist != 0 && Math.floor(sizeSum) == Math.floor(dist) && (user.growing || users[k].growing)){
+        if(
+          dist != 0 && 
+          Math.floor(sizeSum) == Math.floor(dist) && 
+          (user.growing || users[k].growing) &&
+          !connectionHelper.get(i).contains(k)
+          ){
+            
+          connectionHelper.get(i).add(k);
           Connection newCon = new Connection(System.currentTimeMillis(), user, users[k]);
           connections.add(newCon);
           println("new connection", i, k);
@@ -151,7 +161,9 @@ class AnimationSequenceCustom extends AnimationSequence {
       //if connection was made less than 5 seconds ago, play celebration
       if(System.currentTimeMillis() - curCon.timestamp < 5000){
         int xPos = (xCoor[curCon.node1.pole] + xCoor[curCon.node2.pole])/2;
-        int yPos = (yCoor[curCon.node1.pole] + yCoor[curCon.node2.pole])/2;
+        int yPos = canvas.height/2;
+        
+        int diff = Math.abs(curCon.node1.pole - curCon.node2.pole);
         
         for(int i = 1; i < 20; i++) {
          if(i%2 ==0){
@@ -161,10 +173,12 @@ class AnimationSequenceCustom extends AnimationSequence {
              canvas.stroke(curCon.node2.usrColor,255,255);
             canvas.fill(curCon.node1.usrColor,255,255,100);
          }
-         canvas.ellipse(xPos, yPos, (i*frameCount%CURRENT_CATENARY_END/4), (i*frameCount%CURRENT_CATENARY_END/4));
+         canvas.ellipse(xPos, yPos, (i*frameCount%CURRENT_CATENARY_END/4*diff), (i*frameCount%CURRENT_CATENARY_END/4*diff));
         }
       } else {
         //if it's been over 5 seconds, remove connection from queue
+        connectionHelper.get(curCon.node1.pole).remove(curCon.node2.pole);
+        connectionHelper.get(curCon.node2.pole).remove(curCon.node1.pole);
         iterator.remove();
       }
     }
