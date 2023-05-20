@@ -21,7 +21,7 @@ Scheduler scheduler;
 void setup() {
   size(1600, 1000, P2D);
 //  size(1280, 800, P2D);
-  colorMode(RGB, 255);
+  //colorMode(HSB, 100);
     
 
   /////////////////////////////////
@@ -81,7 +81,8 @@ void movieEvent(Movie m) {
 /////////////////////////////////////////////
 void clientConnected() {
   println("MQTT client connected");
-  client.subscribe("catenaryColourSelectionDemo", 0);
+  client.subscribe("catenaryUserUpdate", 0);
+  client.subscribe("catenaryVolumeUpdate", 0);
 }
 
 void connectionLost() {
