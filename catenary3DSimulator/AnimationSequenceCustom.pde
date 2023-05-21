@@ -1,5 +1,6 @@
 import processing.video.*;
 import java.util.*;
+import java.io.*;
 import oscP5.*;
 import netP5.*;
 
@@ -11,6 +12,10 @@ int CURRENT_CATENARY_END = 768;
 
 int[] xCoor;
 int[] yCoor;
+
+long fullCatTs = 0;
+
+boolean triggerFullCatClimax = false;
 
 HashMap<Integer, HashSet> connectionHelper = new HashMap<Integer, HashSet>();
 
@@ -46,8 +51,6 @@ static class Connection {
   }
 }
 
-//Connection [] connections = new Connection [6];
-
 Queue<Connection> connections = new LinkedList<>();
 
 /******************************************************************************
@@ -70,7 +73,7 @@ class AnimationSequenceCustom extends AnimationSequence {
     //initializing poles
     for(int i = 0; i < 5; i++) {
        users[i] = new User(i, false, 100, 0, initialCol, false);
-       connectionHelper.put(i, new HashSet<>());
+       connectionHelper.put(i, new HashSet<Integer>());
     }
     
     //declaring poles x-coordinates
@@ -91,6 +94,56 @@ class AnimationSequenceCustom extends AnimationSequence {
 
   }
   
+/******************************************************************************
+  Disjoint Set Union algorithm implementation for detection of connected components in an undirected graph
+  From https://www.geeksforgeeks.org/connected-components-in-an-undirected-graph/
+*******************************************************************************/
+  
+  public int merge(int[] parent, int x) {
+        if (parent[x] == x)
+            return x;
+        return merge(parent, parent[x]);
+    }
+ 
+  public int connectedComponents(int n, List<List<Integer>> edges) {
+      int[] parent = new int[n];
+      for (int i = 0; i < n; i++) {
+          parent[i] = i;
+      }
+ 
+      for (List<Integer> x : edges) {
+          parent[merge(parent, x.get(0))] = merge(parent, x.get(1));
+      }
+ 
+      int ans = 0;
+      for (int i = 0; i < n; i++) {
+          if (parent[i] == i) ans++;
+      }
+ 
+      for (int i = 0; i < n; i++) {
+          parent[i] = merge(parent, parent[i]);
+      }
+ 
+      Map<Integer, List<Integer>> m = new HashMap<>();
+      for (int i = 0; i < n; i++) {
+          m.computeIfAbsent(parent[i], k -> new ArrayList<>()).add(i);
+      }
+ 
+      for (Map.Entry<Integer, List<Integer>> it : m.entrySet()) {
+          List<Integer> l = it.getValue();
+          for (int x : l) {
+              System.out.print(x + " ");
+          }
+          System.out.println();
+      }
+      return ans;
+  }
+  
+/******************************************************************************
+  Disjoint Set Union algorithm implementation for detection of connected components in an undirected graph
+  From https://www.geeksforgeeks.org/connected-components-in-an-undirected-graph/
+*******************************************************************************/
+  
   public void render() {
     canvas.beginDraw();
     canvas.background(0,0,0);
@@ -105,8 +158,8 @@ class AnimationSequenceCustom extends AnimationSequence {
       User user = users[i];
       
       //if volume input is higher than threshold, grow color at pole
-      if(user.volume > 0.006){ //regularly 0.003 and vol*100
-        user.size += user.volume*50;
+      if(user.volume > 0.006){ //regularly 0.003 and vol*100 || 0.006/50
+        user.size += user.volume*200;
         user.growing = true;
       } else if (user.size > 100) {
         //else decay color at pole
@@ -132,21 +185,26 @@ class AnimationSequenceCustom extends AnimationSequence {
         float dist = dist(xCoor[i], yCoor[i], xCoor[k], yCoor[k]);
         float sizeSum = (user.size + users[k].size)/2;
         
+        //will be checking if diff is between -1 and 1 to give a threshold that allows float values to differ minimally but create connection anyway
+        float diff = sizeSum - dist;
+        
         if(
           dist != 0 && 
-          Math.floor(sizeSum) == Math.floor(dist) && 
+          diff > -1 && 
+          diff < 1 &&
           (user.growing || users[k].growing) &&
           !connectionHelper.get(i).contains(k)
           ){
-            
+   
           connectionHelper.get(i).add(k);
           Connection newCon = new Connection(System.currentTimeMillis(), user, users[k]);
           connections.add(newCon);
-          println("new connection", i, k);
+          println("New connection between " + i + " and " +  k);
+        } else if(dist != 0 && 
+          Math.floor(sizeSum) < Math.floor(dist)) {
+          connectionHelper.get(i).remove(k);
         }
       }
-      
-      
     }
     
     //https://www.techiedelight.com/iterate-through-queue-java/
@@ -177,12 +235,55 @@ class AnimationSequenceCustom extends AnimationSequence {
         }
       } else {
         //if it's been over 5 seconds, remove connection from queue
-        connectionHelper.get(curCon.node1.pole).remove(curCon.node2.pole);
-        connectionHelper.get(curCon.node2.pole).remove(curCon.node1.pole);
         iterator.remove();
       }
     }
 
+    println(connectionHelper);
+    
+    List<List<Integer>> edges = new ArrayList<>();
+    
+    connectionHelper.forEach((key, value) -> {
+      Iterator<Integer> conIterator = value.iterator();
+      while(conIterator.hasNext()){
+        int val = conIterator.next();
+        println("adding edge: ", key, val);
+        edges.add(Arrays.asList(key, val));
+      }
+    });
+    
+    int connectedComponents = connectedComponents(5, edges);
+    
+    if(connectedComponents == 1 && !triggerFullCatClimax){
+      println("Full catenary climax triggered");
+      triggerFullCatClimax = true;
+      fullCatTs = System.currentTimeMillis();
+    }
+    
+    long celebrationRuntime = System.currentTimeMillis() - fullCatTs;
+    if(celebrationRuntime < 10000){
+      
+      //println("in catenary celebration");
+      
+      //to keep non-duplicate colors used
+      HashSet<Integer> colSet = new HashSet<>();
+      
+      for(int i = 0; i < users.length; i++){
+        colSet.add(users[i].usrColor);
+      }
+      Integer[] colArray = colSet.toArray(new Integer[colSet.size()]);
+  
+      canvas.background(200, sin(frameCount*0.001)*210, cos(frameCount*0.01)*150);    
+      for (int i = 0; i < 100; i++) {
+        int xpos = int(((i+1)*(0.25*frameCount))%CURRENT_CATENARY_END);
+        canvas.fill(colArray[i%colArray.length], 255, 255);
+        canvas.ellipse(xpos, canvas.height/2 + cos(frameCount*0.03)*0.25*canvas.height, canvas.height, canvas.height);
+      }
+
+    } else {
+      triggerFullCatClimax = false;
+    }
+    
     /////////////////////////////////////////
     // CUSTOMISE YOUR CODE - END
     /////////////////////////////////////////
