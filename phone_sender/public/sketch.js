@@ -22,12 +22,17 @@ document.addEventListener('touchend', function(e) {
 //////////////////////////////////////////////////
 //FIXED SECTION: DO NOT CHANGE THESE VARIABLES
 //////////////////////////////////////////////////
-var HOST = window.location.origin;
+let HOST = window.location.origin;
 let xmlHttpRequest = new XMLHttpRequest();
 
 ////////////////////////////////////////////////////
 // CUSTOMIZABLE SECTION - BEGIN: ENTER OUR CODE HERE
 ////////////////////////////////////////////////////
+
+let MAX_USERS = 5;
+
+//current users
+let userSessionIds = new Map();
 
 //page toggle
 let currentScreen = 0;
@@ -48,8 +53,6 @@ let poles = [];
 //buttons
 let nextButton;
 let closeButton;
-let micButtonOff;
-let micButtonOn;
 
 //
 let users = [false, false, false, false, false];
@@ -91,7 +94,7 @@ function setup() {
   nextButton.class("next-button");
   nextButton.mousePressed(nextPressed);
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < MAX_USERS; i++) {
     let xCoor;
     if(i%2 != 0) {
       xCoor = -50 + width/4;
@@ -108,21 +111,10 @@ function setup() {
   closeButton.position(30,30);
   closeButton.mousePressed(closePage);
 
-  
-  // micButtonOff = createImg('assets/icons8-microphone-96.png');
-  // micButtonOff.position(-50 + width/2, - 150 + 3*height/4);
-  // micButtonOff.mousePressed(function () {captureAudio = !captureAudio;});
-  // micButtonOff.style("padding: 4px; border: 3px solid white; border-radius: 60px; width: 100px; height: 100px;");
-
-  // micButtonOn = createImg('assets/icons8-microphone-96-dark.png');
-  // micButtonOn.position(-50 + width/2, - 150 + 3*height/4);
-  // micButtonOn.mousePressed(function () {captureAudio = !captureAudio;});
-  // micButtonOn.style("padding: 4px; background-color: white; border: 3px solid white; border-radius: 60px; width: 100px; height: 100px;");
-
 }
 
-
 function draw() {
+  getPoles();
 
   push();
     colorMode(RGB);
@@ -160,20 +152,26 @@ function selectPole(poleId) {
   if(selectedPole != undefined) {
     poles[selectedPole].style("background-color: white;");
   }
+  updatePole(selectedPole, poleId);
   selectedPole = poleId;
   console.log(selectedPole);
 }
 
 function screen1() {
   closeButton.hide();
-  // micButtonOff.hide();
-  // micButtonOn.hide();
   nextButton.show();
   slider.show();
-  poles.forEach(pole => {
-    pole.show();
-    pole.style("background-color: white;");
-  });
+  console.log(userSessionIds);
+  for(i = 0; i < MAX_USERS; i++){
+    let curPole = poles[i];
+    if(curPole != selectedPole && userSessionIds.has(i)){
+      curPole.attribute('disabled', '');
+    } else {
+      curPole.show();
+      curPole.style("background-color: white;");
+      curPole.removeAttribute('disabled');
+    }
+  }
 
   console.log("on screen 1");
   push();
@@ -272,6 +270,35 @@ function screen2() {
 ////////////////////////////////////////////////////
 // CUSTOMIZABLE SECTION - END: ENTER OUR CODE HERE
 ////////////////////////////////////////////////////
+
+/***********************************************************************
+  This function sends the pole information to the server
+***********************************************************************/
+function updatePole(prevPole, newPole){
+  let postData = JSON.stringify({prevPole: prevPole, newPole: newPole});
+
+  xmlHttpRequest.open("POST", HOST + '/updatePole', false);
+  xmlHttpRequest.setRequestHeader("Content-Type", "application/json");
+	xmlHttpRequest.send(postData);
+}
+
+/***********************************************************************
+  This function sends the pole information to the server
+***********************************************************************/
+function getPoles(){
+  xmlHttpRequest.open("GET", HOST + '/getCurrentUsers', false);
+  xmlHttpRequest.setRequestHeader("Content-Type", "application/json");
+	xmlHttpRequest.send();
+  xmlHttpRequest.onreadystatechange = function() {
+    console.log(this.responseText, this.responseText.typeof);
+    if(this.readyState == 4 && this.status == 200 && this.response != undefined){
+      console.log("this response: ", this.response);
+
+      let arr = this.responseText.split(",");
+      userSessionIds = new Map(arr);
+    }
+  }
+}
 
 /***********************************************************************
   === PLEASE DO NOT CHANGE OR DELETE THIS SECTION ===

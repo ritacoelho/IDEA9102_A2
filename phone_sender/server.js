@@ -4,6 +4,8 @@
 // Port for the Express web server
 var PORT = 3300;
 
+//SERVER VARIABLES
+var userSessionIds = new Map();
 
 ///////////////////////////////////////////////////////////
 // UNCOMMENT THIS SECTION IF RUNNING FROM DESKTOP - BEGIN
@@ -12,11 +14,11 @@ var PORT = 3300;
 // KEEP IT COMMENTED OUT IF RUNNING FROM MOBILE
 ///////////////////////////////////////////////////////////
 //Import Express and initialise the web server
-// var express = require('express');
-// var app = express();
-// var server = app.listen(PORT);
-// app.use(express.static('public'));
-// console.log('Node.js Express server running on port ' + PORT);
+var express = require('express');
+var app = express();
+var server = app.listen(PORT);
+app.use(express.static('public'));
+console.log('Node.js Express server running on port ' + PORT);
 ///////////////////////////////////////////////////////////
 // UNCOMMENT THIS SECTION IF RUNNING FROM DESKTOP - END
 ///////////////////////////////////////////////////////////
@@ -27,25 +29,25 @@ var PORT = 3300;
 //
 // KEEP IT COMMENTED OUT IF RUNNING FROM DESKTOP
 ///////////////////////////////////////////////////////////
-var https = require('https');
-var fs = require('fs');
-var express = require('express');
-var app = express();
+// var https = require('https');
+// var fs = require('fs');
+// var express = require('express');
+// var app = express();
 
-https
-  .createServer(
-		// Provide the private and public key to the server by reading each
-		// file's content with the readFileSync() method.
-    {
-      key: fs.readFileSync("key.pem"),
-      cert: fs.readFileSync("cert.pem"),
-    },
-    app
-  )
-  .listen(PORT, () => {
-    console.log("Node.js Express HTTPS server is runing at port " + PORT);
-  });
-app.use(express.static('public'));
+// var server = https
+//   .createServer(
+// 		// Provide the private and public key to the server by reading each
+// 		// file's content with the readFileSync() method.
+//     {
+//       key: fs.readFileSync("key.pem"),
+//       cert: fs.readFileSync("cert.pem"),
+//     },
+//     app
+//   )
+//   .listen(PORT, () => {
+//     console.log("Node.js Express HTTPS server is runing at port " + PORT);
+//   });
+// app.use(express.static('public'));
 ///////////////////////////////////////////////////////////
 // UNCOMMENT THIS SECTION IF RUNNING FROM MOBILE - END
 ///////////////////////////////////////////////////////////
@@ -54,6 +56,15 @@ app.use(express.static('public'));
 var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
+
+// Import socket.io and create a socket to talk to the client
+var socket = require('socket.io');
+var io = socket(server);
+io.sockets.on('connection', newSocketConnection);
+
+function newSocketConnection(socket) {
+  console.log('*** New connection to server web socket ' + socket.id);
+}
 
 // Import MQTT
 var mqtt=require('mqtt');
@@ -79,6 +90,45 @@ function mqttConnectionrError(error) {
     console.log("Cannot connect to MQTT:" + error);
 }
 
+// Handle POST requests for current users (poleId)
+app.post('/updatePole', function(request, response) {
+  // Handle user sessions
+  var newPole = request.body.newPole;
+  var prevPole = request.body.prevPole;
+  console.log(prevPole, newPole);
+  if(prevPole != undefined){
+    userSessionIds.delete(prevPole);
+  }
+  userSessionIds.set(newPole, Date.now());
+  io.sockets.emit('users', userSessionIds.size);
+  console.log("Pole selected: ", newPole, userSessionIds);
+  response.end("");
+});
+
+setInterval(cleanUpOldUserSessions, 5000); // Periodically calls cleanUpOldUserSessions()
+
+// Cleans up any unused user sessions
+function cleanUpOldUserSessions() {
+  for (var userId of userSessionIds.keys()) {
+      var userLastAccess = userSessionIds.get(userId)*1.0;
+
+      if ((Date.now() - userLastAccess) > 30000) { // After 10s of inactivity, remove reference to user
+          userSessionIds.delete(userId);
+          console.log("deleting user due to inactivity");
+          //TODO send mqtt message to reset user
+      }
+  }
+}
+
+// Handle GET requests
+app.get('/getCurrentUsers', function(request, response) {
+  const arr = Array.from(userSessionIds, function (entry) {
+    return entry[0];
+  });
+  console.log("Sending users: ", arr);
+  response.setHeader('content-type', 'application/json');
+  response.send(arr.toString());
+});
 
 // Handle POST requests
 app.post('/updateUser', function(request, response) {
