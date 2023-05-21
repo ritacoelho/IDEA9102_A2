@@ -91,6 +91,16 @@ app.post('/updateUser', function(request, response) {
     response.end("");
 });
 
+app.post('/deleteUser', function(request, response) {
+	var message = request.body.message;
+  console.log("deleting user: ", message);
+	// console.log("POST received: address: " + address + ", value: " + value);
+
+    var mqttTopic = 'catenaryDeleteUser';
+	sendMQTT(mqttTopic, message);
+    response.end("");
+});
+
 app.post('/sendVolume', function(request, response) {
 	var message = request.body.message;
 

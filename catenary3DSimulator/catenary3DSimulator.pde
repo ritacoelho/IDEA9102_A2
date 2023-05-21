@@ -82,6 +82,7 @@ void movieEvent(Movie m) {
 void clientConnected() {
   println("MQTT client connected");
   client.subscribe("catenaryUserUpdate", 0);
+  client.subscribe("catenaryDeleteUser", 0);
   client.subscribe("catenaryVolumeUpdate", 0);
 }
 

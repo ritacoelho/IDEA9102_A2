@@ -194,7 +194,10 @@ function nextPressed(){
 }
 
 function closePage(){
-  //selectedPole = undefined;
+  if(selectedPole != undefined) {
+    deleteUser();
+    selectedPole = undefined;
+  }
   currentScreen = 0;
   console.log("back");
 }
@@ -283,7 +286,6 @@ function screen1() {
   selectedPole != undefined ? nextButton.show() : nextButton.hide();
   selectedPole != undefined ? slider.show() : slider.hide();
 
-  console.log("on screen 1");
   push();
     colorMode(RGB);
 
@@ -394,6 +396,16 @@ function updateUser(){
   console.log(msgStr);
 
 	xmlHttpRequest.open("POST", HOST + '/updateUser', false);
+  xmlHttpRequest.setRequestHeader("Content-Type", "application/json");
+	xmlHttpRequest.send(postData);
+}
+
+function deleteUser(){
+  console.log("on delete user");
+	let postData = JSON.stringify({ id: 1, 'message': selectedPole.toString() });
+  console.log(selectedPole);
+
+	xmlHttpRequest.open("POST", HOST + '/deleteUser', false);
   xmlHttpRequest.setRequestHeader("Content-Type", "application/json");
 	xmlHttpRequest.send(postData);
 }

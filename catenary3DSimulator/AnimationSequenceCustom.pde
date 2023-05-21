@@ -12,6 +12,7 @@ int CURRENT_CATENARY_END = 768;
 
 int[] xCoor;
 int[] yCoor;
+int [] mapMimaColors;
 
 long fullCatTs = 0;
 
@@ -65,15 +66,6 @@ class AnimationSequenceCustom extends AnimationSequence {
     catenaryMovieHeight = Integer.parseInt(Settings.getInstance().getProperty("catenaryMovieHeight"));
     canvas = createGraphics(catenaryMovieWidth, catenaryMovieHeight); 
     
-    //initial color convert from 360 scale to 255;
-    int initialCol = (int)map(270, 0, 360, 0 ,255);
-    
-    //initializing poles
-    for(int i = 0; i < 5; i++) {
-       users[i] = new User(i, 100, 0, initialCol, false);
-       connectionHelper.put(i, new HashSet<Integer>());
-    }
-    
     //declaring poles x-coordinates
     xCoor = new int[5];
     xCoor[0] = 0;
@@ -89,6 +81,26 @@ class AnimationSequenceCustom extends AnimationSequence {
     yCoor[2] = canvas.height;
     yCoor[3] = 0;
     yCoor[4] = canvas.height;
+    
+    //declaring MAP Mima colors
+    mapMimaColors = new int[5];
+    mapMimaColors[0] = 20; //orange
+    mapMimaColors[1] = 159; //green
+    mapMimaColors[2] = 46; //yellow
+    mapMimaColors[3] = 270; //purple
+    mapMimaColors[4] = 198; //blue
+    
+    //initial color convert from 360 scale to 255;
+    //int initialCol = (int)map(270, 0, 360, 0 ,255);
+    
+    //initializing poles
+    for(int i = 0; i < 5; i++) {
+      int initialCol = (int)map(mapMimaColors[i], 0, 360, 0 ,255);
+       users[i] = new User(i, 100, 0, initialCol, false);
+       connectionHelper.put(i, new HashSet<Integer>());
+    }
+    
+    
 
   }
   
@@ -130,9 +142,9 @@ class AnimationSequenceCustom extends AnimationSequence {
       for (Map.Entry<Integer, List<Integer>> it : m.entrySet()) {
           List<Integer> l = it.getValue();
           for (int x : l) {
-              System.out.print(x + " ");
+              //System.out.print(x + " ");
           }
-          System.out.println();
+          //System.out.println();
       }
       return ans;
   }
@@ -157,7 +169,7 @@ class AnimationSequenceCustom extends AnimationSequence {
       
       //if volume input is higher than threshold, grow color at pole
       if(user.volume > 0.006){ //regularly 0.003 and vol*100 || 0.006/50
-        user.size += user.volume*200;
+        user.size += user.volume*50;
         user.growing = true;
       } else if (user.size > 150) {
         //else decay color at pole
@@ -239,7 +251,7 @@ class AnimationSequenceCustom extends AnimationSequence {
       }
     }
 
-    println(connectionHelper);
+    //println(connectionHelper);
     
     List<List<Integer>> edges = new ArrayList<>();
     
@@ -247,7 +259,7 @@ class AnimationSequenceCustom extends AnimationSequence {
       Iterator<Integer> conIterator = value.iterator();
       while(conIterator.hasNext()){
         int val = conIterator.next();
-        println("adding edge: ", key, val);
+        //println("adding edge: ", key, val);
         edges.add(Arrays.asList(key, val));
       }
     });
@@ -325,6 +337,18 @@ void messageReceived(String topic, byte[] payload) {
       
       //println("### Pole: ", position);
       //println("### Volume: ", volume);
+    }
+  } else if (topic.equals("catenaryDeleteUser")) {
+    String[] payloadArray = (new String(payload)).split(";");
+    if(!payloadArray[0].equals("undefined")){
+      int position = new Integer (payloadArray[0].trim());
+      
+      users[position].size = 100;
+      users[position].growing = false;
+      users[position].volume = 0;
+      users[position].usrColor = mapMimaColors[(int)Math.floor(random(0,5))];
+      
+      println("### Reset Pole: ", position);
     }
   }
 }
