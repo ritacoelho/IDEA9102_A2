@@ -50,11 +50,18 @@ body {
     -webkit-appearance: none;
     appearance: none;
     width: 70%; /* 70%-width */
-    height: 100px; /* Specified height */
-    font-size: 60;
+    height: 120px; /* Specified height */
+    font-size: 55px;
     border-radius: 100px;
     border: 10px solid white;
     background: none;
     color: white;
-    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif
+    font-family:'VT323', monospace;
+}
+
+.close-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 80px;
 }
