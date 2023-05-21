@@ -161,10 +161,12 @@ class AnimationSequenceCustom extends AnimationSequence {
       if(user.volume > 0.006){ //regularly 0.003 and vol*100 || 0.006/50
         user.size += user.volume*200;
         user.growing = true;
-      } else if (user.size > 100) {
+      } else if (user.size > 150) {
         //else decay color at pole
         user.size -= 0.5;
         user.growing = false;
+      } else {
+        user.size = 100 + sin(frameCount*0.03)*50;
       }
       
       //design circles to have 70% opacity fill and fully opaque outline
@@ -279,7 +281,6 @@ class AnimationSequenceCustom extends AnimationSequence {
         canvas.fill(colArray[i%colArray.length], 255, 255);
         canvas.ellipse(xpos, canvas.height/2 + cos(frameCount*0.03)*0.25*canvas.height, canvas.height, canvas.height);
       }
-
     } else {
       triggerFullCatClimax = false;
     }
