@@ -48,11 +48,6 @@ let poles = [];
 //buttons
 let nextButton;
 let closeButton;
-let micButtonOff;
-let micButtonOn;
-
-//
-let users = [false, false, false, false, false];
 
 //images
 let closeIcon;
@@ -85,6 +80,7 @@ function setup() {
   slider.class("colorSelection");
   //centering slider by subtracting half of it's screen size responsive width (70%)
   slider.position((width/2) - width*.35, height*.85 - 150);
+  slider.input(updateUser);
 
   nextButton = createButton("Next");
   nextButton.position((width/2) - width*.35, height*.85);
@@ -107,18 +103,6 @@ function setup() {
   closeButton = createImg('assets/icons8-close-96.png');
   closeButton.position(30,30);
   closeButton.mousePressed(closePage);
-
-  
-  // micButtonOff = createImg('assets/icons8-microphone-96.png');
-  // micButtonOff.position(-50 + width/2, - 150 + 3*height/4);
-  // micButtonOff.mousePressed(function () {captureAudio = !captureAudio;});
-  // micButtonOff.style("padding: 4px; border: 3px solid white; border-radius: 60px; width: 100px; height: 100px;");
-
-  // micButtonOn = createImg('assets/icons8-microphone-96-dark.png');
-  // micButtonOn.position(-50 + width/2, - 150 + 3*height/4);
-  // micButtonOn.mousePressed(function () {captureAudio = !captureAudio;});
-  // micButtonOn.style("padding: 4px; background-color: white; border: 3px solid white; border-radius: 60px; width: 100px; height: 100px;");
-
 }
 
 
@@ -143,14 +127,11 @@ function draw() {
 
 function nextPressed(){
   captureAudio = true;
-  users[selectedPole] = true;
-  updateUser();
   currentScreen = 1;
   console.log("next pressed");
 }
 
 function closePage(){
-  users[selectedPole] = false;
   //selectedPole = undefined;
   currentScreen = 0;
   console.log("back");
@@ -166,10 +147,8 @@ function selectPole(poleId) {
 
 function screen1() {
   closeButton.hide();
-  // micButtonOff.hide();
-  // micButtonOn.hide();
-  nextButton.show();
-  slider.show();
+  selectedPole != undefined ? nextButton.show() : nextButton.hide();
+  selectedPole != undefined ? slider.show() : slider.hide();
   poles.forEach(pole => {
     pole.show();
     pole.style("background-color: white;");
@@ -191,7 +170,9 @@ function screen1() {
 
     text("MAP Mima", width/2, -75 + height/4);
 
-    text("2. Pick your color", width/4, height*.85 - 250);
+    if(selectedPole != undefined) {
+      text("2. Pick your color", width/4, height*.85 - 250);
+    }
 
     noFill();
     stroke(255,255,255);
@@ -214,7 +195,6 @@ function screen1() {
 function screen2() {
 
   closeButton.show();
-  //captureAudio? micButtonOn.show() && micButtonOff.hide(): micButtonOff.show() && micButtonOn.hide();
   nextButton.hide();
   slider.hide();
   poles.forEach(pole => {
@@ -278,7 +258,7 @@ function screen2() {
   This function sends a MQTT message to server
 ***********************************************************************/
 function updateUser(){
-  let msgStr = selectedPole + ";" + users[selectedPole] + ";" + slider.value().toString();
+  let msgStr = selectedPole + ";" + slider.value().toString();
 
 	let postData = JSON.stringify({ id: 1, 'message': msgStr });
   console.log(msgStr);

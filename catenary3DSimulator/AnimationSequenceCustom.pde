@@ -21,15 +21,13 @@ HashMap<Integer, HashSet> connectionHelper = new HashMap<Integer, HashSet>();
 
 static class User {
   int pole;
-  boolean playing;
   float size;
   float volume;
   int usrColor;
   boolean growing;
   
-  public User(int pos, boolean pl, float sz, float vol, int col, boolean grw) {
+  public User(int pos, float sz, float vol, int col, boolean grw) {
     pole = pos;
-    playing = pl;
     size = sz;
     volume = vol;
     usrColor = col;
@@ -72,7 +70,7 @@ class AnimationSequenceCustom extends AnimationSequence {
     
     //initializing poles
     for(int i = 0; i < 5; i++) {
-       users[i] = new User(i, false, 100, 0, initialCol, false);
+       users[i] = new User(i, 100, 0, initialCol, false);
        connectionHelper.put(i, new HashSet<Integer>());
     }
     
@@ -305,13 +303,11 @@ void messageReceived(String topic, byte[] payload) {
     String[] payloadArray = (new String(payload)).split(";");
      if(!payloadArray[0].equals("undefined")){
         int position = new Integer (payloadArray[0].trim());
-        boolean playing = new Boolean (payloadArray[1].trim());
-        int usrColor = new Integer (payloadArray[2].trim());
+        int usrColor = new Integer (payloadArray[1].trim());
         
         //user color convert from 360 scale to 255;
         usrColor = (int)map(usrColor, 0, 360, 0 ,255);
         
-        users[position].playing = playing;
         users[position].usrColor = usrColor;
         
         //println("### Pole: ", position);
