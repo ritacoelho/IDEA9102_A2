@@ -200,6 +200,7 @@ class AnimationSequenceCustom extends AnimationSequence {
         //will be checking if diff is between -1 and 1 to give a threshold that allows float values to differ minimally but create connection anyway
         float diff = sizeSum - dist;
         
+        //if passes all conditions, crerate new instance of Connection object
         if(
           dist != 0 && 
           diff > -1 && 
@@ -207,7 +208,7 @@ class AnimationSequenceCustom extends AnimationSequence {
           (user.growing || users[k].growing) &&
           !connectionHelper.get(i).contains(k)
           ){
-   
+          
           connectionHelper.get(i).add(k);
           Connection newCon = new Connection(System.currentTimeMillis(), user, users[k]);
           connections.add(newCon);
@@ -235,6 +236,7 @@ class AnimationSequenceCustom extends AnimationSequence {
         
         int diff = Math.abs(curCon.node1.pole - curCon.node2.pole);
         
+        //play overlay of ellipses with alternating colors from two connecting users
         for(int i = 1; i < 20; i++) {
          if(i%2 ==0){
             canvas.stroke(curCon.node1.usrColor,255,255);
@@ -254,7 +256,7 @@ class AnimationSequenceCustom extends AnimationSequence {
     //println(connectionHelper);
     
     List<List<Integer>> edges = new ArrayList<>();
-    
+    //counts edges in connected graph
     connectionHelper.forEach((key, value) -> {
       Iterator<Integer> conIterator = value.iterator();
       while(conIterator.hasNext()){
@@ -265,13 +267,14 @@ class AnimationSequenceCustom extends AnimationSequence {
     });
     
     int connectedComponents = connectedComponents(5, edges);
-    
+    //if graph is fully connected (play full catenary animation)
     if(connectedComponents == 1 && !triggerFullCatClimax){
       println("Full catenary climax triggered");
       triggerFullCatClimax = true;
       fullCatTs = System.currentTimeMillis();
     }
     
+    //full catenary animation
     long celebrationRuntime = System.currentTimeMillis() - fullCatTs;
     if(celebrationRuntime < 10000){
       
@@ -279,12 +282,12 @@ class AnimationSequenceCustom extends AnimationSequence {
       
       //to keep non-duplicate colors used
       HashSet<Integer> colSet = new HashSet<>();
-      
       for(int i = 0; i < users.length; i++){
         colSet.add(users[i].usrColor);
       }
       Integer[] colArray = colSet.toArray(new Integer[colSet.size()]);
   
+      //play series of ellipses with all the current pole's colors
       canvas.background(200, sin(frameCount*0.001)*210, cos(frameCount*0.01)*150);    
       for (int i = 0; i < 100; i++) {
         int xpos = int(((i+1)*(0.25*frameCount))%CURRENT_CATENARY_END);
@@ -322,8 +325,8 @@ void messageReceived(String topic, byte[] payload) {
         
         users[position].usrColor = usrColor;
         
-        //println("### Pole: ", position);
-        //println("### Colour: ", usrColor);
+        println("### Pole: ", position);
+        println("### Colour: ", usrColor);
      }
 
   } else if (topic.equals("catenaryVolumeUpdate")) {
@@ -335,8 +338,8 @@ void messageReceived(String topic, byte[] payload) {
   
       users[position].volume = volume;
       
-      //println("### Pole: ", position);
-      //println("### Volume: ", volume);
+      println("### Pole: ", position);
+      println("### Volume: ", volume);
     }
   } else if (topic.equals("catenaryDeleteUser")) {
     String[] payloadArray = (new String(payload)).split(";");
